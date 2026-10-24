@@ -1,0 +1,49 @@
+---
+- name: Crear directorios base para configuraciones en worker
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - /opt/bigdata
+    - /opt/bigdata/hadoop
+
+- name: Crear directorio de datos para DataNode
+  ansible.builtin.file:
+    path: /opt/bigdata/hdfs/datanode
+    state: directory
+    owner: "1001"
+    group: "100"
+    mode: '0755'
+
+- name: Renderizar core-site.xml en worker
+  ansible.builtin.template:
+    src: core-site.xml.j2
+    dest: /opt/bigdata/hadoop/core-site.xml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Renderizar hdfs-site.xml en worker
+  ansible.builtin.template:
+    src: hdfs-site.xml.j2
+    dest: /opt/bigdata/hadoop/hdfs-site.xml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Renderizar docker-compose.yml en worker
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/bigdata/docker-compose.yml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Arrancar servicios Worker con Docker Compose (DataNode + Spark Worker)
+  ansible.builtin.command:
+    cmd: docker compose -f /opt/bigdata/docker-compose.yml up -d
+  register: compose_up_worker
+  changed_when: "'Started' in compose_up_worker.stdout or 'Running' in compose_up_worker.stdout or 'Creating' in compose_up_worker.stdout"

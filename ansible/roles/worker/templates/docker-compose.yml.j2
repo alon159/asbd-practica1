@@ -1,0 +1,32 @@
+services:
+  datanode:
+    image: apache/hadoop:3.5.0
+    container_name: hadoop-datanode
+    hostname: {{ inventory_hostname }}
+    restart: unless-stopped
+    network_mode: host
+    user: "1001:100"
+    environment:
+      HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
+      HADOOP_HEAPSIZE_MAX: "192"
+      HADOOP_HEAPSIZE_MIN: "96"
+    entrypoint: ["hdfs"]
+    command: ["datanode"]
+    volumes:
+      - /opt/bigdata/hdfs/datanode:/data/hdfs/datanode
+      - /opt/bigdata/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - /opt/bigdata/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+
+  spark-worker:
+    image: apache/spark:3.5.9-scala2.12-java11-python3-ubuntu
+    container_name: spark-worker
+    hostname: {{ inventory_hostname }}
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      SPARK_MASTER: "spark://192.168.56.10:7077"
+      SPARK_WORKER_CORES: "1"
+      SPARK_WORKER_MEMORY: "512m"
+      SPARK_WORKER_WEBUI_PORT: "8081"
+      SPARK_DAEMON_MEMORY: "256m"
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://192.168.56.10:7077"]

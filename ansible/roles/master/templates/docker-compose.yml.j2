@@ -1,0 +1,31 @@
+services:
+  namenode:
+    image: apache/hadoop:3.5.0
+    container_name: hadoop-namenode
+    hostname: master
+    restart: unless-stopped
+    network_mode: host
+    user: "1001:100"
+    environment:
+      HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
+      HADOOP_HEAPSIZE_MAX: "256"
+      HADOOP_HEAPSIZE_MIN: "128"
+    entrypoint: ["hdfs"]
+    command: ["namenode"]
+    volumes:
+      - /opt/bigdata/hdfs/namenode:/data/hdfs/namenode
+      - /opt/bigdata/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - /opt/bigdata/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+
+  spark-master:
+    image: apache/spark:3.5.9-scala2.12-java11-python3-ubuntu
+    container_name: spark-master
+    hostname: master
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      SPARK_MASTER_HOST: "192.168.56.10"
+      SPARK_MASTER_PORT: "7077"
+      SPARK_MASTER_WEBUI_PORT: "8080"
+      SPARK_DAEMON_MEMORY: "256m"
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]

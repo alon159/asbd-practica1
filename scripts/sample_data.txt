@@ -1,0 +1,24 @@
+Apache Hadoop is a collection of open-source software utilities that facilitates using a network of many computers to solve problems involving massive amounts of data and computation.
+It provides a software framework for distributed storage and processing of big data using the MapReduce programming model.
+Apache Spark is an open-source unified analytics engine for large-scale data processing.
+Spark provides an interface for programming entire clusters with implicit data parallelism and fault tolerance.
+Hadoop Distributed File System HDFS is a distributed, scalable, and portable file system written in Java for the Hadoop framework.
+A Hadoop cluster has nominally a single namenode plus a cluster of datanodes, although redundancy options are available for the namenode due to its criticality.
+Each datanode serves up blocks of data over the network using a block protocol specific to HDFS.
+The file system uses TCP port 9000 for client RPC requests.
+Data replication across worker1 and worker2 ensures that blocks of data are preserved even if one node fails.
+Spark standalone mode is a simple cluster manager included with Spark that makes it easy to set up a cluster.
+In Spark standalone mode, Spark allocates resources across worker nodes dynamically.
+Worker nodes execute tasks in parallel across CPU cores and memory pools.
+Distributed computing distributes datasets across multiple physical or virtual machines in private networks.
+Vagrant provisions virtual machines and private networking between master and workers.
+Ansible automates configuration management and Docker container orchestration.
+Docker packages Hadoop NameNode, DataNode, Spark Master, and Spark Worker cleanly into portable containers.
+Big Data architectures rely on horizontal scalability to scale out workloads seamlessly.
+Testing distributed workloads requires submitting jobs that divide data into multiple partitions.
+Each partition is assigned to a different worker node in the cluster.
+Worker 1 processes its share of partitions while Worker 2 processes its share concurrently.
+Big Data systems empower organizations to gain deep insights from vast volumes of information.
+The combination of HDFS for resilient storage and Spark for fast in-memory computation is standard in modern data platforms.
+Replication factor of two guarantees that each data block exists on both worker nodes in our three-node cluster.
+Continuous monitoring of cluster web interfaces provides real-time visibility into resource utilization and job execution progress.

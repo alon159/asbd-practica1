@@ -1,0 +1,13 @@
+﻿services:
+  spark-master:
+    image: apache/spark:3.5.9-scala2.12-java11-python3-ubuntu
+    container_name: spark-master
+    hostname: master
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      SPARK_MASTER_HOST: "192.168.56.10"
+      SPARK_MASTER_PORT: "7077"
+      SPARK_MASTER_WEBUI_PORT: "8080"
+      SPARK_DAEMON_MEMORY: "256m"
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]

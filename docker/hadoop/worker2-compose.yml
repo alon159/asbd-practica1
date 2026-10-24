@@ -1,0 +1,21 @@
+
+services:
+  datanode:
+    image: apache/hadoop:3.5.0
+    container_name: hadoop-datanode
+    hostname: worker2
+    restart: unless-stopped
+    user: "1001:100"
+    environment:
+      HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
+      HADOOP_HEAPSIZE_MAX: "192"
+      HADOOP_HEAPSIZE_MIN: "96"
+    entrypoint: ["hdfs"]
+    command: ["datanode"]
+    ports:
+      - "9866:9866"
+      - "9864:9864"
+    volumes:
+      - /opt/bigdata/hdfs/datanode:/data/hdfs/datanode
+      - ./worker2/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./worker2/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
