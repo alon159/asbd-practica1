@@ -1,82 +1,42 @@
 ---
-- name: Crear directorios base para configuraciones en master
+- name: Crear directorio para el almacenamiento de NameNode
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: /var/hadoop/hdfs/namenode
     state: directory
-    owner: root
-    group: root
-    mode: '0755'
-  loop:
-    - /opt/bigdata
-    - /opt/bigdata/hadoop
+    mode: '0777'
 
-- name: Crear directorio de datos para NameNode
-  ansible.builtin.file:
-    path: /opt/bigdata/hdfs/namenode
-    state: directory
-    owner: "1001"
-    group: "100"
-    mode: '0755'
-
-- name: Renderizar core-site.xml en master
-  ansible.builtin.template:
-    src: core-site.xml.j2
-    dest: /opt/bigdata/hadoop/core-site.xml
-    owner: root
-    group: root
-    mode: '0644'
-
-- name: Renderizar hdfs-site.xml en master
-  ansible.builtin.template:
-    src: hdfs-site.xml.j2
-    dest: /opt/bigdata/hadoop/hdfs-site.xml
-    owner: root
-    group: root
-    mode: '0644'
-
-- name: Renderizar docker-compose.yml en master
-  ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: /opt/bigdata/docker-compose.yml
-    owner: root
-    group: root
-    mode: '0644'
-
-- name: Comprobar si el NameNode ya está formateado
-  ansible.builtin.stat:
-    path: /opt/bigdata/hdfs/namenode/current
-  register: namenode_formatted
-
-- name: Formatear NameNode por primera vez (idempotente)
-  ansible.builtin.command:
-    cmd: >-
-      docker run --rm
-      --network host
-      -v /opt/bigdata/hdfs/namenode:/data/hdfs/namenode
-      -v /opt/bigdata/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
-      -v /opt/bigdata/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
-      --user 1001:100
-      apache/hadoop:3.5.0 hdfs namenode -format -force -nonInteractive
-  when: not namenode_formatted.stat.exists
-
-- name: Arrancar servicios Master con Docker Compose (NameNode + Spark Master)
-  ansible.builtin.command:
-    cmd: docker compose -f /opt/bigdata/docker-compose.yml up -d
-  register: compose_up_master
-  changed_when: "'Started' in compose_up_master.stdout or 'Running' in compose_up_master.stdout or 'Creating' in compose_up_master.stdout"
-
-- name: Esperar a que el NameNode esté disponible en el puerto 9000
-  ansible.builtin.wait_for:
-    host: 192.168.56.10
-    port: 9000
+- name: Desplegar contenedor HDFS NameNode
+  community.docker.docker_container:
+    name: namenode
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     state: started
-    delay: 5
-    timeout: 60
+    restart_policy: always
+    network_mode: host
+    volumes:
+      - /var/hadoop/hdfs/namenode:/hadoop/dfs/name
+      - /vagrant/data:/data
+    env:
+      CLUSTER_NAME: "asbd-cluster"
+      CORE_CONF_fs_defaultFS: "hdfs://master:9000"
+      HDFS_CONF_dfs_replication: "2"
+      HDFS_CONF_dfs_permissions: "false"
+      HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check: "false"
 
-- name: Esperar a que Spark Master esté disponible en el puerto 7077
-  ansible.builtin.wait_for:
-    host: 192.168.56.10
-    port: 7077
+- name: Desplegar contenedor Spark Master
+  community.docker.docker_container:
+    name: spark-master
+    image: bde2020/spark-master:3.0.0-hadoop3.2
     state: started
-    delay: 5
-    timeout: 60
+    restart_policy: always
+    network_mode: host
+    volumes:
+      - /vagrant/jobs:/jobs
+    env:
+      INIT_DAEMON_STEP: "setup_spark"
+      CORE_CONF_fs_defaultFS: "hdfs://master:9000"
+      SPARK_MASTER_HOST: "master"
+      SPARK_LOCAL_IP: "192.168.56.10"
+      SPARK_MASTER_PORT: "7077"
+      SPARK_MASTER_WEBUI_PORT: "8080"
+      PYSPARK_PYTHON: "python3"
+      PYSPARK_DRIVER_PYTHON: "python3"

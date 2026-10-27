@@ -1,0 +1,27 @@
+---
+- name: Eliminar resolucion loopback de hostnames en /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.[12]\.1\s+.*{{ item }}'
+    state: absent
+  loop: "{{ groups['cluster'] }}"
+
+- name: Asegurar resolucion de nombres de todos los nodos en /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "^{{ hostvars[item]['node_ip'] }}\\s+{{ item }}$"
+    line: "{{ hostvars[item]['node_ip'] }} {{ item }}"
+    state: present
+  loop: "{{ groups['cluster'] }}"
+
+- name: Instalar herramientas y utilidades basicas de red
+  ansible.builtin.apt:
+    name:
+      - curl
+      - wget
+      - gnupg
+      - lsb-release
+      - net-tools
+      - iputils-ping
+    state: present
+    update_cache: yes

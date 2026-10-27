@@ -1,0 +1,19 @@
+---
+- name: Configuracion comun para todos los nodos del cluster
+  hosts: cluster
+  become: true
+  roles:
+    - common
+    - docker
+
+- name: Despliegue de servicios en el nodo Master (HDFS NameNode y Spark Master)
+  hosts: master
+  become: true
+  roles:
+    - master
+
+- name: Despliegue de servicios en los nodos Worker (HDFS DataNode y Spark Worker)
+  hosts: workers
+  become: true
+  roles:
+    - worker

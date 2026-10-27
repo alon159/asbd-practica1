@@ -1,0 +1,20 @@
+---
+- name: Instalar Docker Engine y el SDK de Python para Docker
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - python3-docker
+    state: present
+    update_cache: yes
+
+- name: Asegurar que el servicio de Docker este activo y habilitado
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Agregar usuario vagrant al grupo docker
+  ansible.builtin.user:
+    name: vagrant
+    groups: docker
+    append: true

@@ -1,49 +1,38 @@
 ---
-- name: Crear directorios base para configuraciones en worker
+- name: Crear directorio para el almacenamiento de DataNode
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: /var/hadoop/hdfs/datanode
     state: directory
-    owner: root
-    group: root
-    mode: '0755'
-  loop:
-    - /opt/bigdata
-    - /opt/bigdata/hadoop
+    mode: '0777'
 
-- name: Crear directorio de datos para DataNode
-  ansible.builtin.file:
-    path: /opt/bigdata/hdfs/datanode
-    state: directory
-    owner: "1001"
-    group: "100"
-    mode: '0755'
+- name: Desplegar contenedor HDFS DataNode
+  community.docker.docker_container:
+    name: datanode
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    state: started
+    restart_policy: always
+    network_mode: host
+    volumes:
+      - /var/hadoop/hdfs/datanode:/hadoop/dfs/data
+    env:
+      SERVICE_PRECONDITION: "master:9870"
+      CORE_CONF_fs_defaultFS: "hdfs://master:9000"
+      HDFS_CONF_dfs_replication: "2"
+      HDFS_CONF_dfs_permissions: "false"
 
-- name: Renderizar core-site.xml en worker
-  ansible.builtin.template:
-    src: core-site.xml.j2
-    dest: /opt/bigdata/hadoop/core-site.xml
-    owner: root
-    group: root
-    mode: '0644'
-
-- name: Renderizar hdfs-site.xml en worker
-  ansible.builtin.template:
-    src: hdfs-site.xml.j2
-    dest: /opt/bigdata/hadoop/hdfs-site.xml
-    owner: root
-    group: root
-    mode: '0644'
-
-- name: Renderizar docker-compose.yml en worker
-  ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: /opt/bigdata/docker-compose.yml
-    owner: root
-    group: root
-    mode: '0644'
-
-- name: Arrancar servicios Worker con Docker Compose (DataNode + Spark Worker)
-  ansible.builtin.command:
-    cmd: docker compose -f /opt/bigdata/docker-compose.yml up -d
-  register: compose_up_worker
-  changed_when: "'Started' in compose_up_worker.stdout or 'Running' in compose_up_worker.stdout or 'Creating' in compose_up_worker.stdout"
+- name: Desplegar contenedor Spark Worker
+  community.docker.docker_container:
+    name: spark-worker
+    image: bde2020/spark-worker:3.0.0-hadoop3.2
+    state: started
+    restart_policy: always
+    network_mode: host
+    env:
+      SPARK_MASTER: "spark://master:7077"
+      SPARK_LOCAL_IP: "{{ hostvars[inventory_hostname]['node_ip'] }}"
+      SPARK_WORKER_WEBUI_PORT: "8081"
+      SPARK_WORKER_CORES: "1"
+      SPARK_WORKER_MEMORY: "1G"
+      CORE_CONF_fs_defaultFS: "hdfs://master:9000"
+      PYSPARK_PYTHON: "python3"
+      PYSPARK_DRIVER_PYTHON: "python3"
